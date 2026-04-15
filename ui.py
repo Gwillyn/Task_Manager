@@ -1,3 +1,4 @@
+from io import text_encoding
 import event
 import calendar
 import tkinter as tk
@@ -5,8 +6,10 @@ from tkinter import ttk
 from datetime import date
 
 
+text_font = "JetBrainsMono Nerd Font"
+
+
 def main_display():
-    text_font = "JetBrainsMono Nerd Font"
 
     root = tk.Tk()
     root.title("Task Manager")
@@ -52,12 +55,12 @@ def main_display():
     settings_button = ttk.Button(
         buttonframe, text="Settings", command=lambda: settings_display(root)
     )
-    settings_button.grid(column=0, row=1, pady=30)
+    settings_button.grid(column=0, row=1, pady=30, ipadx=10)
 
     create_task_button = ttk.Button(
-        buttonframe, text="Make Task", command=lambda: create_display(root)
+        buttonframe, text="Create Task", command=lambda: create_display(root)
     )
-    create_task_button.grid(column=0, row=0)
+    create_task_button.grid(column=0, row=0, ipadx=1)
 
     # Notebook for list and calendar view
     notebook = ttk.Notebook(taskframe)
@@ -113,8 +116,26 @@ def main_display():
     root.mainloop()
 
 
-def settings_display(root):
-    print("Settings")
+def settings_display(root, width=600, height=400):
+    settings_pop = tk.Toplevel(root)
+    settings_pop.title("Settings")
+
+    # This grabs the new window and opens it in the middle of the screen.
+    # also, it lets any window managers know to keep the window floating
+    settings_pop.transient(root)
+    settings_pop.grab_set()
+    settings_pop.wm_attributes(
+        "-type", "utility"
+    )  # lets WM know to float window since it is read as a utility
+    screen_w = settings_pop.winfo_screenwidth()
+    screen_h = settings_pop.winfo_screenheight()
+    x = (screen_w // 2) - (width // 2)
+    y = (screen_h // 2) - (height // 2)
+    settings_pop.geometry(f"{width}x{height}+{x}+{y}")
+
+    ttk.Label(settings_pop, text="> SETTINGS", font=(text_font, 25, "bold")).grid(
+        column=0, row=0, padx=(10, 0)
+    )
 
 
 def create_display(root):
