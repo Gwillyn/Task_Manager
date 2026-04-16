@@ -1,11 +1,8 @@
-from io import text_encoding
 import event
-import calendar
 import tkinter as tk
 from tkinter import ttk
-from tkinter import filedialog
 from datetime import date
-from datetime import datetime
+import ics_manager as ics
 
 
 text_font = "JetBrainsMono Nerd Font"
@@ -120,21 +117,7 @@ def main_display():
 
 
 def settings_display(root, width=600, height=400):
-    settings_pop = tk.Toplevel(root)
-    settings_pop.title("Settings")
-
-    # This grabs the new window and opens it in the middle of the screen.
-    # also, it lets any window managers know to keep the window floating
-    settings_pop.transient(root)
-    settings_pop.grab_set()
-    settings_pop.wm_attributes(
-        "-type", "utility"
-    )  # lets WM know to float window since it is read as a utility
-    screen_w = settings_pop.winfo_screenwidth()
-    screen_h = settings_pop.winfo_screenheight()
-    x = (screen_w // 2) - (width // 2)
-    y = (screen_h // 2) - (height // 2)
-    settings_pop.geometry(f"{width}x{height}+{x}+{y}")
+    settings_pop = popup_window(root, "Settings", width, height)
 
     ttk.Label(settings_pop, text="> SETTINGS", font=(text_font, 25, "bold")).grid(
         column=0, row=0, padx=(10, 0)
@@ -143,12 +126,12 @@ def settings_display(root, width=600, height=400):
     import_button = ttk.Button(
         settings_pop,
         text="Import ICS",
-        command=import_ics,
+        command=ics.import_ics,
     )
     import_button.grid(column=0, row=1)
 
     export_button = ttk.Button(
-        settings_pop, text="Export ICS", command=lambda: export_ics()
+        settings_pop, text="Export ICS", command=lambda: ics.export_ics()
     )
     export_button.grid(column=0, row=2)
 
@@ -156,49 +139,28 @@ def settings_display(root, width=600, height=400):
     theme_button.grid(column=1, row=1)
 
 
-def import_ics():
-    file_path = filedialog.askopenfilename(
-        filetypes=[("ICS files", "*.ics"), ("All files", "*.*")]
-    )
-    if file_path:
-        # Process file
-        print(file_path)
+def create_display(root, width=600, height=600):
+    create_pop = popup_window(root, "Create Task", width, height)
 
-
-def export_ics():
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".ics",
-        filetypes=[("ICS files", "*.ics"), ("All files", "*.*")],
-        title="Save calendar as ICS",
+    ttk.Label(create_pop, text="> Create Task", font=(text_font, 25, "bold")).grid(
+        column=0, row=0, padx=(10, 0)
     )
 
-    if not file_path:
-        return
 
-    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Task Manager//EN"]
+def popup_window(root, title, width, height):
+    name = tk.Toplevel(root)
+    name.title(title)
 
-    for e in event.events:
-        start_dt = datetime.combine(e.start_date, e.start_time)
-        end_dt = datetime.combine(e.due_date, e.due_time)
-
-        dtstart = start_dt.strftime("%Y%m%dT%H%M%S")
-        dtend = end_dt.strftime("%Y%m%dT%H%M%S")
-
-        lines.extend(
-            [
-                "BEGIN:VEVENT",
-                f"UID:{e.uuid}",
-                f"SUMMARY:{e.title}",
-                f"DTSTART:{dtstart}",
-                f"DTEND:{dtend}",
-                f"DESCRIPTION:{e.description}",
-                "END:VEVENT",
-            ]
-        )
-    lines.append("END:VCALENDAR")
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-
-
-def create_display(root):
-    print("Create")
+    # This grabs the new window and opens it in the middle of the screen.
+    # also, it lets any window managers know to keep the window floating
+    name.transient(root)
+    name.grab_set()
+    name.wm_attributes(
+        "-type", "utility"
+    )  # lets WM know to float window since it is read as a utility
+    screen_w = name.winfo_screenwidth()
+    screen_h = name.winfo_screenheight()
+    x = (screen_w // 2) - (width // 2)
+    y = (screen_h // 2) - (height // 2)
+    name.geometry(f"{width}x{height}+{x}+{y}")
+    return name
