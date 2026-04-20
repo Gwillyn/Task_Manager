@@ -1,8 +1,10 @@
+import collections
 import event
 import tkinter as tk
 from tkinter import ttk
-from datetime import date
+from datetime import date, datetime
 import ics_manager as ics
+from tkcalendar import Calendar
 
 
 text_font = "JetBrainsMono Nerd Font"
@@ -13,7 +15,7 @@ def main_display():
 
     root = tk.Tk()
     root.title("Task Manager")
-    root.geometry("800x600")
+    root.geometry("900x800")
 
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
@@ -145,6 +147,33 @@ def create_display(root, width=600, height=600):
     ttk.Label(create_pop, text="> Create Task", font=(text_font, 25, "bold")).grid(
         column=0, row=0, padx=(10, 0)
     )
+    # Title entry
+    ttk.Label(create_pop, text="Title: ", font=(text_font, 16)).grid(
+        column=0, row=1, sticky="w", padx=(10, 0)
+    )
+    title_entry = ttk.Entry(create_pop, width=30)
+    title_entry.grid(column=0, row=2)
+
+    # Description Entry
+    ttk.Label(create_pop, text="Description: ", font=(text_font, 16)).grid(
+        column=0, row=3, sticky="w", padx=(10, 0)
+    )
+    desc_entry = ttk.Entry(create_pop, width=30)
+    desc_entry.grid(column=0, row=4)
+
+    # Due date and time entry
+    date_entry = Calendar(create_pop, selectmode="day")
+    date_entry.grid(column=0, row=5)
+
+    # Submit
+    submit = ttk.Button(
+        create_pop,
+        text="Submit",
+        command=lambda: event.save_event(
+            title_entry.get(), desc_entry.get(), datetime.now()
+        ),
+    )
+    submit.grid(column=1, row=6)
 
 
 def popup_window(root, title, width, height):

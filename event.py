@@ -80,5 +80,19 @@ def load_events():
     pass
 
 
-def save_events():
-    pass
+def save_event(title, description, date):
+    if title == "" or description == "":
+        print("give valid inputs")
+        return
+    else:
+        events.append(
+            Event(
+                str(uuid4()),
+                title,
+                datetime.now().date(),
+                datetime.now().time(),
+                date.time(),
+                date.date(),
+                description,
+            )
+        )
