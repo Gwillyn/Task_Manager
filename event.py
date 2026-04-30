@@ -82,7 +82,7 @@ def load_events():
 
 def save_event(title, description, date):
     if title == "" or description == "":
-        print("give valid inputs")
+        print("Give valid inputs")
         return
     else:
         events.append(
@@ -91,8 +91,8 @@ def save_event(title, description, date):
                 title,
                 datetime.now().date(),
                 datetime.now().time(),
-                date.time(),
                 date.date(),
+                date.time(),
                 description,
             )
         )
