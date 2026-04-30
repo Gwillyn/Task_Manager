@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import date, datetime
 import ics_manager as ics
-from tkcalendar import Calendar
+from tkcalendar import Calendar, calendar_
 
 
 text_font = "JetBrainsMono Nerd Font"
@@ -59,7 +59,9 @@ def main_display():
     settings_button.grid(column=0, row=1, pady=30, ipadx=10)
 
     create_task_button = ttk.Button(
-        buttonframe, text="Create Task", command=lambda: create_display(root, tasktree)
+        buttonframe,
+        text="Create Task",
+        command=lambda: create_display(root, tasktree, calendar, calendar_events),
     )
     create_task_button.grid(column=0, row=0, ipadx=1)
 
@@ -68,23 +70,22 @@ def main_display():
     notebook.grid(column=0, row=0, sticky="nsew", padx=30)
 
     # List Area
-    listframe = ttk.Frame(notebook)
+    listframe = ttk.Frame(notebook, relief="ridge", borderwidth=20)
     listframe.columnconfigure(0, weight=1)
-    listframe.rowconfigure(1, weight=1)
+    listframe.rowconfigure(0, weight=0)
 
     notebook.add(listframe, text="List: ")
 
-    ttk.Label(listframe, text="Tasks: ", font=(text_font, 16, "bold")).grid(
-        column=0, row=0, pady=10
-    )
-
-    eventsframe = ttk.Frame(listframe, borderwidth=20, relief="ridge")
-    eventsframe.grid(column=0, row=0, sticky="ew")
-    eventsframe.columnconfigure(0, weight=1)
+    eventsframe = ttk.Frame(listframe)
+    eventsframe.grid(column=0, row=0, sticky="nsew")
     eventsframe.rowconfigure(0, weight=1)
+    eventsframe.columnconfigure(0, weight=1)
 
     tasktree = ttk.Treeview(
-        eventsframe, columns=("title", "due date", "description"), show="headings"
+        eventsframe,
+        columns=("title", "due date", "description"),
+        show="headings",
+        height=19,
     )
     tasktree.heading("title", text="Title: ")
     tasktree.heading("due date", text="Due Date: ")
@@ -94,14 +95,31 @@ def main_display():
     tasktree.column("due date", width=120)
     tasktree.column("description", width=120)
 
-    tasktree.grid(column=0, row=0, sticky="nwes", padx=20, pady=(0, 20))
+    tasktree.grid(column=0, row=0, sticky="nsew", padx=20)
 
     refresh_tasks(tasktree)
 
-    calendarframe = ttk.Frame(notebook)
+    # Calendar Area
+    calendarframe = ttk.Frame(notebook, relief="ridge", borderwidth=20)
     calendarframe.columnconfigure(0, weight=1)
 
     notebook.add(calendarframe, text="Calendar: ")
+
+    calendar = Calendar(calendarframe, selectmode="day")
+    calendar.grid(column=0, row=0, sticky="nsew", padx=20, pady=20)
+
+    calendar_events = ttk.Treeview(
+        calendarframe, columns=("title", "time"), show="headings"
+    )
+    calendar_events.heading("title", text="Title")
+    calendar_events.heading("time", text="Time")
+
+    calendar_events.grid(column=0, row=1, sticky="ew", padx=20)
+    calendar.bind(
+        "<<CalendarSelected>>", lambda e: show_day_calendar(calendar, calendar_events)
+    )
+
+    refresh_calendar(calendar, calendar_events)
 
     root.mainloop()
 
@@ -129,7 +147,7 @@ def settings_display(root, width=600, height=400):
     theme_button.grid(column=1, row=1)
 
 
-def create_display(root, tasktree, width=600, height=600):
+def create_display(root, tasktree, calendar, calendar_events, width=600, height=600):
     create_pop = popup_window(root, "Create Task", width, height)
 
     ttk.Label(create_pop, text="> Create Task", font=(text_font, 25, "bold")).grid(
@@ -170,7 +188,7 @@ def create_display(root, tasktree, width=600, height=600):
     )
 
     hour_box.grid(column=1, row=2, sticky="w", padx=(25, 0))
-    colon_box = ttk.Label(create_pop, text=":", font=(text_font, 16)).grid(
+    ttk.Label(create_pop, text=":", font=(text_font, 16)).grid(
         column=2, row=2, sticky="w"
     )
     minute_box.grid(column=3, row=2, sticky="w")
@@ -199,6 +217,8 @@ def create_display(root, tasktree, width=600, height=600):
             datetime.combine(stripped_date.date(), full_time),
         )
         refresh_tasks(tasktree)
+        refresh_calendar(calendar, calendar_events)
+        show_day_calendar(calendar, calendar_events)
         create_pop.destroy()
 
     # Submit
@@ -226,8 +246,8 @@ def popup_window(root, title, width, height):
 
 
 def refresh_tasks(tasktree):
-    for item in tasktree.get_children():
-        tasktree.delete(item)
+    for i in tasktree.get_children():
+        tasktree.delete(i)
 
     for e in event.events:
         # Display time and date in a readable format
@@ -241,3 +261,29 @@ def refresh_tasks(tasktree):
 
         # Insert the event details into the tree
         tasktree.insert("", "end", values=(e.title, date_set, e.description))
+
+
+def refresh_calendar(calendar, calendar_events):
+    calendar.calevent_remove("all")
+
+    for i in calendar_events.get_children():
+        calendar_events.delete(i)
+
+    for e in event.events:
+        event_label = f"{e.due_time.strftime('%I:%M %p')} {e.title}"
+
+        calendar.calevent_create(e.due_date, event_label, "task")
+    calendar.tag_config("task", background="green", foreground="black")
+
+
+def show_day_calendar(calendar, calendar_events):
+    for i in calendar_events.get_children():
+        calendar_events.delete(i)
+
+    selected_day = calendar.selection_get()
+
+    for e in event.events:
+        if e.due_date == selected_day:
+            calendar_events.insert(
+                "", "end", values=(e.title, e.due_time.strftime("%I:%M %p"))
+            )
