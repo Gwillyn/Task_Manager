@@ -105,7 +105,7 @@ def main_display():
 
     notebook.add(calendarframe, text="Calendar: ")
 
-    calendar = Calendar(calendarframe, selectmode="day")
+    calendar = Calendar(calendarframe, selectmode="day", date_pattern="mm/dd/yy")
     calendar.grid(column=0, row=0, sticky="nsew", padx=20, pady=20)
 
     calendar_events = ttk.Treeview(
@@ -194,7 +194,7 @@ def create_display(root, tasktree, calendar, calendar_events, width=600, height=
     minute_box.grid(column=3, row=2, sticky="w")
     ampm_box.grid(column=4, row=2, sticky="w")
 
-    date_entry = Calendar(create_pop, selectmode="day")
+    date_entry = Calendar(create_pop, selectmode="day", date_pattern="mm/dd/yy")
     date_entry.grid(column=1, row=4, padx=(20, 0), columnspan=3, rowspan=3)
 
     def submit_handler():
