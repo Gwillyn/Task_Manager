@@ -1,9 +1,10 @@
 import event
+import database
 import tkinter as tk
 from tkinter import ttk
 from datetime import date, datetime
 import ics_manager as ics
-from tkcalendar import Calendar, calendar_
+from tkcalendar import Calendar
 
 
 text_font = "JetBrainsMono Nerd Font"
@@ -211,14 +212,18 @@ def create_display(root, tasktree, calendar, calendar_events, width=600, height=
         full_time = datetime.strptime(f"{hours}:{minutes}", "%H:%M").time()
         stripped_date = datetime.strptime(date_entry.get_date(), "%m/%d/%y")
 
-        event.save_event(
+        database.add_task(
             title_entry.get(),
             desc_entry.get(),
-            datetime.combine(stripped_date.date(), full_time),
+            f"{datetime.now().date()} {datetime.now().time()}",
+            datetime.combine(stripped_date.date(), full_time).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
         )
         refresh_tasks(tasktree)
         refresh_calendar(calendar, calendar_events)
         show_day_calendar(calendar, calendar_events)
+
         create_pop.destroy()
 
     # Submit
@@ -249,18 +254,23 @@ def refresh_tasks(tasktree):
     for i in tasktree.get_children():
         tasktree.delete(i)
 
-    for e in event.events:
-        # Display time and date in a readable format
-        event_time = e.due_time.strftime("%I:%M %p")
-        event_date = e.due_date.strftime("%Y-%m-%d")
+    tasks = database.get_tasks()
 
-        if e.due_date == date.today():
+    for e in tasks:
+        task_id, title, desc, start_date, due_date, complete = e
+
+        # Display time and date in a readable format
+        due = datetime.strptime(due_date, "%Y-%m-%d %H:%M:%S")
+        event_time = due.strftime("%I:%M %p")
+        event_date = due.strftime("%Y-%m-%d")
+
+        if due.date() == date.today():
             date_set = event_time + "  " + "Today"
         else:
             date_set = event_time + "  " + event_date
 
         # Insert the event details into the tree
-        tasktree.insert("", "end", values=(e.title, date_set, e.description))
+        tasktree.insert("", "end", iid=task_id, values=(title, date_set, desc))
 
 
 def refresh_calendar(calendar, calendar_events):
@@ -269,10 +279,16 @@ def refresh_calendar(calendar, calendar_events):
     for i in calendar_events.get_children():
         calendar_events.delete(i)
 
-    for e in event.events:
-        event_label = f"{e.due_time.strftime('%I:%M %p')} {e.title}"
+    tasks = database.get_tasks()
 
-        calendar.calevent_create(e.due_date, event_label, "task")
+    for e in tasks:
+        task_id, title, desc, start_date, due_date, complete = e
+
+        due = datetime.strptime(due_date, "%Y-%m-%d %H:%M:%S")
+
+        event_label = f"{due.strftime('%I:%M %p')} {title}"
+
+        calendar.calevent_create(due.date(), event_label, "task")
     calendar.tag_config("task", background="green", foreground="black")
 
 
@@ -281,9 +297,11 @@ def show_day_calendar(calendar, calendar_events):
         calendar_events.delete(i)
 
     selected_day = calendar.selection_get()
+    tasks = database.get_tasks()
 
-    for e in event.events:
-        if e.due_date == selected_day:
-            calendar_events.insert(
-                "", "end", values=(e.title, e.due_time.strftime("%I:%M %p"))
-            )
+    for e in tasks:
+        task_id, title, desc, start_date, due_date, complete = e
+        due = datetime.strptime(due_date, "%Y-%m-%d %H:%M:%S")
+
+        if due.date() == selected_day:
+            calendar_events.insert("", "end", values=(title, due.strftime("%I:%M %p")))

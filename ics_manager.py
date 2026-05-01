@@ -1,6 +1,6 @@
 from tkinter import filedialog
-import event
 from datetime import datetime
+import database
 
 
 def import_ics():
@@ -24,9 +24,13 @@ def export_ics():
 
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Task Manager//EN"]
 
-    for e in event.events:
-        start_dt = datetime.combine(e.start_date, e.start_time)
-        end_dt = datetime.combine(e.due_date, e.due_time)
+    tasks = database.get_tasks()
+
+    for e in tasks:
+        task_id, title, description, start_datetime, due_datetime, complete = e
+
+        start_dt = datetime.strptime(start_datetime, "%Y-%m-%d %H:%M:%S")
+        end_dt = datetime.strptime(due_datetime, "%Y-%m-%d %H:%M:%S")
 
         dtstart = start_dt.strftime("%Y%m%dT%H%M%S")
         dtend = end_dt.strftime("%Y%m%dT%H%M%S")
@@ -34,11 +38,11 @@ def export_ics():
         lines.extend(
             [
                 "BEGIN:VEVENT",
-                f"UID:{e.uuid}",
-                f"SUMMARY:{e.title}",
+                f"UID:{task_id}",
+                f"SUMMARY:{title}",
                 f"DTSTART:{dtstart}",
                 f"DTEND:{dtend}",
-                f"DESCRIPTION:{e.description}",
+                f"DESCRIPTION:{description}",
                 "END:VEVENT",
             ]
         )
