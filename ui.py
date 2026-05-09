@@ -99,6 +99,31 @@ def main_display():
 
     refresh_tasks(tasktree)
 
+    # Right-click menu
+    task_menu = tk.Menu(root, tearoff=0)
+    task_menu.add_command(
+        label="Edit",
+        command=lambda: edit_selected_task(
+            root, tasktree, tasktree, calendar, calendar_events
+        ),
+    )
+    task_menu.add_command(
+        label="Delete",
+        command=lambda: delete_selected_task(
+            tasktree, tasktree, calendar, calendar_events
+        ),
+    )
+
+    def show_task_menu(event):
+        item = tasktree.identify_row(event.y)
+
+        if item:
+            tasktree.selection_set(item)
+            task_menu.tk_popup(event.x_root, event.y_root)
+
+    tasktree.bind("<Button-3>", show_task_menu)
+    tasktree.bind("<Button-2>", show_task_menu)
+
     # Calendar Area
     calendarframe = ttk.Frame(notebook, relief="ridge", borderwidth=20)
     calendarframe.columnconfigure(0, weight=1)
@@ -109,10 +134,14 @@ def main_display():
     calendar.grid(column=0, row=0, sticky="nsew", padx=20, pady=20)
 
     calendar_events = ttk.Treeview(
-        calendarframe, columns=("title", "time"), show="headings"
+        calendarframe, columns=("title", "time", "description"), show="headings"
     )
     calendar_events.heading("title", text="Title")
     calendar_events.heading("time", text="Time")
+
+    # Hides the description column, it is only here for the right-click menu not to break with its indexing
+    calendar_events.heading("description", text="Description")
+    calendar_events.column("description", width=0, stretch=False)
 
     calendar_events.grid(column=0, row=1, sticky="ew", padx=20)
     calendar.bind(
@@ -120,6 +149,30 @@ def main_display():
     )
 
     refresh_calendar(calendar, calendar_events)
+
+    # Right-click menu
+    calendar_menu = tk.Menu(root, tearoff=0)
+    calendar_menu.add_command(
+        label="Edit",
+        command=lambda: edit_selected_task(
+            root, calendar_events, tasktree, calendar, calendar_events
+        ),
+    )
+    calendar_menu.add_command(
+        label="Delete",
+        command=lambda: delete_selected_task(
+            calendar_events, tasktree, calendar, calendar_events
+        ),
+    )
+
+    def show_calendar_task_menu(event):
+        item = calendar_events.identify_row(event.y)
+        if item:
+            calendar_events.selection_set(item)
+            calendar_menu.tk_popup(event.x_root, event.y_root)
+
+    calendar_events.bind("<Button-3>", show_calendar_task_menu)
+    calendar_events.bind("<Button-2>", show_calendar_task_menu)
 
     root.mainloop()
 
@@ -303,4 +356,75 @@ def show_day_calendar(calendar, calendar_events):
         due = datetime.strptime(due_date, "%Y-%m-%d %H:%M:%S")
 
         if due.date() == selected_day:
-            calendar_events.insert("", "end", values=(title, due.strftime("%I:%M %p")))
+            calendar_events.insert(
+                "",
+                "end",
+                iid=task_id,
+                values=(title, due.strftime("%I:%M %p"), desc),
+            )
+
+
+def delete_selected_task(selected_tree, tasktree, calendar, calendar_events):
+    select = selected_tree.selection()
+
+    if not select:
+        return
+
+    task_id = select[0]
+    database.delete_task(task_id)
+
+    refresh_tasks(tasktree)
+    refresh_calendar(calendar, calendar_events)
+    show_day_calendar(calendar, calendar_events)
+
+
+def edit_selected_task(
+    root, selected_tree, tasktree, calendar, calendar_events, width=600, height=400
+):
+    select = selected_tree.selection()
+
+    if not select:
+        return
+
+    task_id = select[0]
+    values = selected_tree.item(task_id, "values")
+
+    old_title = values[0]
+    old_description = values[2]
+
+    edit_pop = popup_window(root, "Edit Task", width, height)
+
+    ttk.Label(edit_pop, text="> Edit Task", font=(text_font, 25, "bold")).grid(
+        column=0, row=0, pady=(0, 20), padx=(10, 0), sticky="nw"
+    )
+
+    ttk.Label(edit_pop, text="Title: ", font=(text_font, 16)).grid(
+        column=0, row=1, sticky="w", padx=(10, 0)
+    )
+
+    title_entry = ttk.Entry(edit_pop, width=30)
+    title_entry.insert(0, old_title)
+    title_entry.grid(column=0, row=2, sticky="w", padx=(10, 0))
+
+    ttk.Label(edit_pop, text="Description: ", font=(text_font, 16)).grid(
+        column=0, row=3, sticky="w", pady=(40, 0), padx=(10, 0)
+    )
+    desc_entry = ttk.Entry(edit_pop, width=60)
+    desc_entry.insert(0, old_description)
+    desc_entry.grid(column=0, row=4, sticky="w", pady=(40, 0), padx=(10, 0))
+
+    def submit_edit():
+        database.update_task(
+            task_id,
+            title_entry.get(),
+            desc_entry.get(),
+        )
+
+        refresh_tasks(tasktree)
+        refresh_calendar(calendar, calendar_events)
+        show_day_calendar(calendar, calendar_events)
+
+        edit_pop.destroy()
+
+    submit = ttk.Button(edit_pop, text="Save", command=submit_edit)
+    submit.grid(column=0, row=8, pady=20)

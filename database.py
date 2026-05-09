@@ -61,3 +61,18 @@ def delete_task(task_id):
         )
 
         con.commit()
+
+
+def update_task(task_id, title, description):
+    with get_connection() as con:
+        cur = con.cursor()
+        cur.execute(
+            """
+            UPDATE tasks
+            SET title = ?,
+                description = ?
+            WHERE id = ?
+            """,
+            (title, description, task_id),
+        )
+        con.commit()
