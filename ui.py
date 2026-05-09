@@ -1,4 +1,3 @@
-import event
 import database
 import tkinter as tk
 from tkinter import ttk
@@ -137,15 +136,15 @@ def settings_display(root, width=600, height=400):
         text="Import ICS",
         command=ics.import_ics,
     )
-    import_button.grid(column=0, row=1)
+    import_button.grid(column=0, row=1, padx=20, pady=(10, 40))
 
     export_button = ttk.Button(
         settings_pop, text="Export ICS", command=lambda: ics.export_ics()
     )
-    export_button.grid(column=0, row=2)
+    export_button.grid(column=0, row=2, padx=20)
 
     theme_button = ttk.Button(settings_pop, text="Theme")
-    theme_button.grid(column=1, row=1)
+    theme_button.grid(column=1, row=1, padx=20, pady=(10, 40))
 
 
 def create_display(root, tasktree, calendar, calendar_events, width=600, height=600):
