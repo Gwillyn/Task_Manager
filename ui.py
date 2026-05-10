@@ -13,7 +13,7 @@ dark_mode = False
 def main_display():
 
     root = tk.Tk()
-    root.title("Task Manager")
+    root.title("Traket")
     root.geometry("900x800")
 
     root.columnconfigure(0, weight=1)
@@ -39,7 +39,7 @@ def main_display():
 
     ttk.Label(
         headerframe,
-        text="Task Manager",
+        text="Traket Calendar",
         font=(text_font, 30, "bold"),
         anchor="center",
     ).grid(column=0, row=0)
@@ -54,7 +54,9 @@ def main_display():
     buttonframe.grid(column=1, row=0, sticky="ne", padx=(0, 30), pady=(50, 0))
 
     settings_button = ttk.Button(
-        buttonframe, text="Settings", command=lambda: settings_display(root)
+        buttonframe,
+        text="Settings",
+        command=lambda: settings_display(root, tasktree, calendar, calendar_events),
     )
     settings_button.grid(column=0, row=1, pady=30, ipadx=10)
 
@@ -123,6 +125,16 @@ def main_display():
 
     tasktree.bind("<Button-3>", show_task_menu)
     tasktree.bind("<Button-2>", show_task_menu)
+    tasktree.bind(
+        "<Delete>",
+        lambda e: delete_selected_task(tasktree, tasktree, calendar, calendar_events),
+    )
+    tasktree.bind(
+        "<Return>",
+        lambda e: edit_selected_task(
+            root, tasktree, tasktree, calendar, calendar_events
+        ),
+    )
 
     # Calendar Area
     calendarframe = ttk.Frame(notebook, relief="ridge", borderwidth=20)
@@ -173,11 +185,23 @@ def main_display():
 
     calendar_events.bind("<Button-3>", show_calendar_task_menu)
     calendar_events.bind("<Button-2>", show_calendar_task_menu)
+    calendar_events.bind(
+        "<Delete>",
+        lambda e: delete_selected_task(
+            calendar_events, tasktree, calendar, calendar_events
+        ),
+    )
+    calendar_events.bind(
+        "<Return>",
+        lambda e: edit_selected_task(
+            root, calendar_events, tasktree, calendar, calendar_events
+        ),
+    )
 
     root.mainloop()
 
 
-def settings_display(root, width=600, height=400):
+def settings_display(root, tasktree, calendar, calendar_events, width=600, height=400):
     settings_pop = popup_window(root, "Settings", width, height)
 
     ttk.Label(settings_pop, text="> SETTINGS", font=(text_font, 25, "bold")).grid(
@@ -187,7 +211,7 @@ def settings_display(root, width=600, height=400):
     import_button = ttk.Button(
         settings_pop,
         text="Import ICS",
-        command=ics.import_ics,
+        command=lambda: ics.import_ics(tasktree, calendar, calendar_events),
     )
     import_button.grid(column=0, row=1, padx=20, pady=(10, 40))
 
@@ -323,6 +347,7 @@ def refresh_tasks(tasktree):
 
         # Insert the event details into the tree
         tasktree.insert("", "end", iid=task_id, values=(title, date_set, desc))
+    first_task_select(tasktree)
 
 
 def refresh_calendar(calendar, calendar_events):
@@ -428,3 +453,13 @@ def edit_selected_task(
 
     submit = ttk.Button(edit_pop, text="Save", command=submit_edit)
     submit.grid(column=0, row=8, pady=20)
+
+
+def first_task_select(tasktree):
+    child = tasktree.get_children()
+
+    if child:
+        first = child[0]
+        tasktree.selection_set(first)
+        tasktree.focus(first)
+        tasktree.focus_set()

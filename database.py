@@ -57,7 +57,7 @@ def delete_task(task_id):
             """
         DELETE FROM tasks WHERE id = ?
         """,
-            (task_id),
+            (task_id,),
         )
 
         con.commit()

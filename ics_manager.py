@@ -3,13 +3,58 @@ from datetime import datetime
 import database
 
 
-def import_ics():
+def import_ics(tasktree, calendar, calendar_events):
     file_path = filedialog.askopenfilename(
         filetypes=[("ICS files", "*.ics"), ("All files", "*.*")]
     )
-    if file_path:
-        # Process file
-        print(file_path)
+    if not file_path:
+        return
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f.readlines()]
+
+    event_data = {}
+    inside_event = False
+    for line in lines:
+        if line == "BEGIN:VEVENT":
+            inside_event = True
+            event_data = {}
+        elif line == "END:VEVENT":
+            inside_event = False
+            title = event_data.get("SUMMARY", "Untitled")
+            description = event_data.get("DESCRIPTION", "")
+            dtstart = event_data.get("DTSTART")
+            dtend = event_data.get("DTEND")
+
+            if dtstart and dtend:
+                dtstart = dtstart.replace("Z", "")
+                dtend = dtend.replace("Z", "")
+
+                start_datetime = datetime.strptime(dtstart, "%Y%m%dT%H%M%S").strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                due_datetime = datetime.strptime(dtend, "%Y%m%dT%H%M%S").strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+                database.add_task(
+                    title,
+                    description,
+                    start_datetime,
+                    due_datetime,
+                )
+        elif inside_event:
+            if ":" in line:
+                key, value = line.split(":", 1)
+                event_data[key] = value
+    print("Import complete")
+
+    import ui
+
+    ui.refresh_tasks(tasktree)
+    ui.refresh_calendar(calendar, calendar_events)
+    ui.show_day_calendar(calendar, calendar_events)
 
 
 def export_ics():
